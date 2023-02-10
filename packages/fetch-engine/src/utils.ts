@@ -76,7 +76,16 @@ export async function overwriteFile(sourcePath: string, targetPath: string) {
   // about incorrect binary signature and kill node process
   // https://openradar.appspot.com/FB8914243
   await removeFileIfExists(targetPath)
-  await fs.promises.copyFile(sourcePath, targetPath)
+
+  const realSourcePath = await fs.promises.realpath(sourcePath)
+
+  if (sourcePath !== realSourcePath) {
+    // the source will be a symlink if engine is local
+    // in this case we create a hard link to the source
+    await fs.promises.link(realSourcePath, targetPath)
+  } else {
+    await fs.promises.copyFile(sourcePath, targetPath)
+  }
 }
 
 async function removeFileIfExists(filePath: string) {

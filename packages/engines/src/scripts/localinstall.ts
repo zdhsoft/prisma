@@ -66,7 +66,8 @@ async function main() {
     }
 
     for (const [binaryType, outputPath] of Object.entries(engineOutputPaths)) {
-      await fs.promises.copyFile(outputPath, engineCachePaths[binaryType])
+      await fs.promises.rm(engineCachePaths[binaryType], { force: true })
+      await fs.promises.symlink(outputPath, engineCachePaths[binaryType])
     }
   }
 }
