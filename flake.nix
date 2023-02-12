@@ -8,11 +8,22 @@
 
   outputs = { self, nixpkgs, flake-utils }:
     flake-utils.lib.eachDefaultSystem (system:
-      let pkgs = import nixpkgs { inherit system; };
+      let
+        pkgs = import nixpkgs { inherit system; };
+        nodejs = pkgs.nodejs_latest;
       in {
         formatter = pkgs.nixpkgs-fmt;
 
-        devShells.default = pkgs.mkShell { };
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = with pkgs; [
+            nodejs
+            nodejs.pkgs.pnpm
+            nodejs.pkgs.typescript
+            nodejs.pkgs.typescript-language-server
+            nodejs.pkgs.vscode-langservers-extracted
+            nodejs.pkgs."@prisma/language-server"
+          ];
+        };
 
         packages = { };
       });
