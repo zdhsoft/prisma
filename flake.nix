@@ -18,6 +18,7 @@
           nativeBuildInputs = with pkgs; [
             nodejs
             nodejs.pkgs.pnpm
+            nodejs.pkgs.ts-node
             nodejs.pkgs.typescript
             nodejs.pkgs.typescript-language-server
             nodejs.pkgs.vscode-langservers-extracted
