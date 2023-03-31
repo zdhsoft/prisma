@@ -15,9 +15,10 @@
         formatter = pkgs.nixpkgs-fmt;
 
         devShells.default = pkgs.mkShell {
-          nativeBuildInputs = with pkgs; [
+          nativeBuildInputs = [
             nodejs
             nodejs.pkgs.pnpm
+            nodejs.pkgs.prettier
             nodejs.pkgs.ts-node
             nodejs.pkgs.typescript
             nodejs.pkgs.typescript-language-server
