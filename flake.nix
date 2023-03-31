@@ -11,7 +11,8 @@
       let
         pkgs = import nixpkgs { inherit system; };
         nodejs = pkgs.nodejs_latest;
-      in {
+      in
+      {
         formatter = pkgs.nixpkgs-fmt;
 
         devShells.default = pkgs.mkShell {
