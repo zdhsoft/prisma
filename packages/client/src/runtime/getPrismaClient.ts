@@ -1,4 +1,3 @@
-import { Context, context } from '@opentelemetry/api'
 import Debug, { clearLogs } from '@prisma/debug'
 import {
   BatchTransactionOptions,
@@ -165,7 +164,6 @@ export type InternalRequestParams = {
   callsite?: CallSite
   transaction?: PrismaPromiseTransaction
   unpacker?: Unpacker // TODO what is this
-  otelParentCtx?: Context
   /** Used to "desugar" a user input into an "expanded" one */
   argsMapper?: (args?: UserArgs) => UserArgs
   /** Used for Accelerate client extension via Data Proxy */
@@ -802,7 +800,6 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
      */
     async _request(internalParams: InternalRequestParams): Promise<any> {
       // this is the otel context that is active at the callsite
-      internalParams.otelParentCtx = context.active()
 
       // make sure that we don't leak extra properties to users
       const params: QueryMiddlewareParams = {
@@ -886,7 +883,6 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
       argsMapper,
       transaction,
       unpacker,
-      otelParentCtx,
       customDataProxyFetch,
     }: InternalRequestParams) {
       try {
@@ -950,8 +946,6 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
           extensions: this._extensions,
           transaction,
           unpacker,
-          otelParentCtx,
-          otelChildCtx: context.active(),
           customDataProxyFetch,
         })
       } catch (e) {

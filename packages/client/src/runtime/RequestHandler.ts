@@ -1,4 +1,3 @@
-import { Context } from '@opentelemetry/api'
 import Debug from '@prisma/debug'
 import {
   EngineValidationError,
@@ -48,8 +47,6 @@ export type RequestParams = {
   args?: any
   headers?: Record<string, string>
   unpacker?: Unpacker
-  otelParentCtx?: Context
-  otelChildCtx?: Context
   customDataProxyFetch?: (fetch: Fetch) => Fetch
 }
 
@@ -65,8 +62,6 @@ export type Request = {
   protocolMessage: ProtocolMessage
   protocolEncoder: ProtocolEncoder
   transaction?: PrismaPromiseTransaction
-  otelParentCtx?: Context
-  otelChildCtx?: Context
   tracingConfig?: TracingConfig
   customDataProxyFetch?: (fetch: Fetch) => Fetch
 }
@@ -91,7 +86,7 @@ export class RequestHandler {
         const transaction = requests[0].transaction
         const encoder = requests[0].protocolEncoder
         const queries = encoder.createBatch(requests.map((r) => r.protocolMessage))
-        const traceparent = getTraceParent({ context: requests[0].otelParentCtx, tracingConfig: client._tracingConfig })
+        const traceparent = getTraceParent({ tracingConfig: client._tracingConfig })
 
         // TODO: pass the child information to QE for it to issue links to queries
         // const links = requests.map((r) => trace.getSpanContext(r.otelChildCtx!))
@@ -138,8 +133,6 @@ export class RequestHandler {
     transaction,
     unpacker,
     extensions,
-    otelParentCtx,
-    otelChildCtx,
     customDataProxyFetch,
   }: RequestParams) {
     try {
@@ -147,8 +140,6 @@ export class RequestHandler {
         protocolMessage,
         protocolEncoder,
         transaction,
-        otelParentCtx,
-        otelChildCtx,
         tracingConfig: this.client._tracingConfig,
         customDataProxyFetch,
       })

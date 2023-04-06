@@ -21,6 +21,7 @@ function nodeRuntimeBuildConfig(
     bundle: true,
     minify: true,
     sourcemap: 'linked',
+    metafile: true,
     emitTypes: targetEngineType === 'all',
     define: {
       NODE_CLIENT: 'true',
