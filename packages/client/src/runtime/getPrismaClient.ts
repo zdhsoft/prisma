@@ -1,4 +1,4 @@
-import { Context, context } from '@opentelemetry/api'
+import { Context, context, trace } from '@opentelemetry/api'
 import Debug, { clearLogs } from '@prisma/debug'
 import {
   BatchTransactionOptions,
@@ -309,6 +309,7 @@ export function getPrismaClient(config: GetPrismaClientConfig) {
     _extensions: MergedExtensionsList
 
     constructor(optionsArg?: PrismaClientOptions) {
+      const span = trace.getTracer('prisma').startSpan('prisma:client:constructor')
       if (optionsArg) {
         validatePrismaClientOptions(optionsArg, config.datasourceNames)
       }
@@ -455,7 +456,9 @@ export function getPrismaClient(config: GetPrismaClientConfig) {
         throw e
       }
 
-      return applyModelsAndClientExtensions(this) // custom constructor return value
+      const result = applyModelsAndClientExtensions(this) // custom constructor return value
+      span.end()
+      return result
     }
     get [Symbol.toStringTag]() {
       return 'PrismaClient'
