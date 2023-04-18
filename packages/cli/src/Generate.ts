@@ -46,11 +46,12 @@ ${chalk.bold('Usage')}
 
 ${chalk.bold('Options')}
 
-    -h, --help   Display this help message
-      --schema   Custom path to your Prisma schema
-  --data-proxy   Enable the Data Proxy in the Prisma Client
-       --watch   Watch the Prisma schema and rerun after a change
-   --generator   Generator to use (may be provided multiple times)
+       -h, --help   Display this help message
+         --schema   Custom path to your Prisma schema
+     --data-proxy   Enable the Data Proxy in the Prisma Client
+          --watch   Watch the Prisma schema and rerun after a change
+      --generator   Generator to use (may be provided multiple times)
+  --binary-target   Generate the client for specific target(s)
 
 ${chalk.bold('Examples')}
 
@@ -106,6 +107,7 @@ ${chalk.bold('Examples')}
       '--schema': String,
       '--data-proxy': Boolean,
       '--generator': [String],
+      '--binary-target': [String],
       // Only used for checkpoint information
       '--postinstall': String,
       '--telemetry-information': String,
@@ -144,6 +146,7 @@ ${chalk.bold('Examples')}
         dataProxy: !!args['--data-proxy'] || !!process.env.PRISMA_GENERATE_DATAPROXY,
         generatorNames: args['--generator'],
         postinstall: Boolean(args['--postinstall']),
+        binaryTargetsOverride: args['--binary-target'],
       })
 
       if (!generators || generators.length === 0) {

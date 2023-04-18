@@ -53,7 +53,9 @@ export type GetGeneratorOptions = {
   dataProxy: boolean
   generatorNames?: string[]
   postinstall?: boolean
+  binaryTargetsOverride?: string[]
 }
+
 /**
  * Makes sure that all generators have the binaries they deserve and returns a
  * `Generator` class per generator defined in the schema.prisma file.
@@ -75,6 +77,7 @@ export async function getGenerators(options: GetGeneratorOptions): Promise<Gener
     dataProxy,
     generatorNames = [],
     postinstall,
+    binaryTargetsOverride,
   } = options
 
   if (!schemaPath) {
@@ -122,6 +125,15 @@ export async function getGenerators(options: GetGeneratorOptions): Promise<Gener
 
   if (config.datasources.length === 0) {
     throw new Error(missingDatasource)
+  }
+
+  if (binaryTargetsOverride !== undefined) {
+    for (const generator of config.generators) {
+      generator.binaryTargets = binaryTargetsOverride.map((target) => ({
+        fromEnvVar: null,
+        value: target,
+      }))
+    }
   }
 
   printConfigWarnings(config.warnings)

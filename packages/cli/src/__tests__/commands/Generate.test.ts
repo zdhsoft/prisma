@@ -1,6 +1,7 @@
-import { jestConsoleContext, jestContext } from '@prisma/get-platform'
-import { getClientEngineType } from '@prisma/internals'
+import { getNodeAPIName, getPlatform, jestConsoleContext, jestContext, Platform } from '@prisma/get-platform'
+import { ClientEngineType, getClientEngineType } from '@prisma/internals'
 import path from 'path'
+import { match } from 'ts-pattern'
 
 import { Generate } from '../../Generate'
 
@@ -188,6 +189,55 @@ describe('--schema from parent directory', () => {
         '--generator=invalid_client_2',
       ]),
     ).rejects.toMatchSnapshot()
+  })
+})
+
+describe('--binary-target', () => {
+  const getQueryEngineFileName = (platform: Platform) =>
+    match(getClientEngineType())
+      .with(ClientEngineType.Library, () => getNodeAPIName(platform, 'fs'))
+      .with(
+        ClientEngineType.Binary,
+        () =>
+          // TODO: this is duplicated throughout the codebase, factor it out
+          `query-engine-${platform}${platform === 'windows' ? '.exe' : ''}`,
+      )
+      .exhaustive()
+
+  it('must not implicitly include "native"', async () => {
+    ctx.fixture('example-project')
+
+    const currentPlatform = await getPlatform()
+    let targetPlatform: Platform = 'rhel-openssl-1.1.x'
+
+    if (targetPlatform === currentPlatform) {
+      targetPlatform = 'debian-openssl-1.1.x'
+    }
+
+    await Generate.new().parse([`--binary-target=${targetPlatform}`])
+    const generatedFiles = ctx.fs.list('./generated/client')
+
+    expect(generatedFiles).toContain(getQueryEngineFileName(targetPlatform))
+    expect(generatedFiles).not.toContain(getQueryEngineFileName(currentPlatform))
+  })
+
+  it('accepts a single binary target', async () => {
+    ctx.fixture('example-project')
+
+    await Generate.new().parse(['--binary-target=rhel-openssl-1.1.x'])
+    const generatedFiles = ctx.fs.list('./generated/client')
+
+    expect(generatedFiles).toContain(getQueryEngineFileName('rhel-openssl-1.1.x'))
+  })
+
+  it('accepts multiple binary targets', async () => {
+    ctx.fixture('example-project')
+
+    await Generate.new().parse(['--binary-target=rhel-openssl-1.1.x', '--binary-target=debian-openssl-1.1.x'])
+    const generatedFiles = ctx.fs.list('./generated/client')
+
+    expect(generatedFiles).toContain(getQueryEngineFileName('rhel-openssl-1.1.x'))
+    expect(generatedFiles).toContain(getQueryEngineFileName('debian-openssl-1.1.x'))
   })
 })
 
