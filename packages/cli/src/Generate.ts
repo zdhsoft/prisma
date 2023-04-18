@@ -64,6 +64,9 @@ ${chalk.bold('Examples')}
   Run the command with multiple specific generators
     ${chalk.dim('$')} prisma generate --generator client1 --generator client2
 
+  Generate the client for deployment to a different platform
+    ${chalk.dim('$')} prisma generate --binary-target rhel-openssl-1.0.x
+
   Watch Prisma schema file and rerun after each change
     ${chalk.dim('$')} prisma generate --watch
 
