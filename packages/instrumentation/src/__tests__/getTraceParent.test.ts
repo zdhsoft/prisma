@@ -1,5 +1,5 @@
-import { getTraceParent } from './getTraceParent'
-import { TracingConfig } from './getTracingConfig'
+import { getTraceParent } from '../../../client/src/runtime/core/tracing/getTraceParent'
+import { TracingConfig } from '../../../client/src/runtime/core/tracing/getTracingConfig'
 
 it('should return 00 traceparent when tracing is disabled', () => {
   const tracingConfig: TracingConfig = {

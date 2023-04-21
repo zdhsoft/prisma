@@ -4,10 +4,12 @@ import type { GeneratorConfig } from '@prisma/generator-helper'
 import {
   callOnce,
   ClientEngineType,
+  ExtendedSpanOptions,
   getClientEngineType,
   getQueryEngineProtocol,
   logger,
   QueryEngineProtocol,
+  TracingHelper,
   tryLoadEnvs,
   warnOnce,
 } from '@prisma/internals'
@@ -52,7 +54,7 @@ import {
   PrismaPromiseTransaction,
 } from './core/request/PrismaPromise'
 import { UserArgs } from './core/request/UserArgs'
-import { getTraceParent, getTracingConfig, runInChildSpan, SpanOptions, TracingConfig } from './core/tracing'
+import { getTracingHelper } from './core/tracing/TracingHelper'
 import { getLockCountPromise } from './core/transaction/utils/createLockCountPromise'
 import { DMMFDatamodelHelper, DMMFHelper } from './dmmf'
 import type { DMMF } from './dmmf-types'
@@ -310,7 +312,7 @@ export function getPrismaClient(config: GetPrismaClientConfig) {
     _clientVersion: string
     _errorFormat: ErrorFormat
     _clientEngineType: ClientEngineType
-    _tracingConfig: TracingConfig
+    _tracingHelper: TracingHelper
     _metrics: MetricsClient
     _middlewares = new MiddlewareHandler<QueryMiddleware>()
     _previewFeatures: string[]
@@ -341,7 +343,7 @@ export function getPrismaClient(config: GetPrismaClientConfig) {
       this._clientVersion = config.clientVersion ?? clientVersion
       this._activeProvider = config.activeProvider
       this._dataProxy = config.dataProxy
-      this._tracingConfig = getTracingConfig(this._previewFeatures)
+      this._tracingHelper = getTracingHelper(this._previewFeatures)
       this._clientEngineType = getClientEngineType(config.generator!)
       const envPaths = {
         rootEnvPath:
@@ -440,7 +442,7 @@ export function getPrismaClient(config: GetPrismaClientConfig) {
           inlineSchema: config.inlineSchema,
           inlineDatasources: config.inlineDatasources,
           inlineSchemaHash: config.inlineSchemaHash,
-          tracingConfig: this._tracingConfig,
+          tracingHelper: this._tracingHelper,
           logEmitter: logEmitter,
           engineProtocol,
           isBundled: config.isBundled,
@@ -754,7 +756,7 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
       callback: (client: Client) => Promise<unknown>
       options?: Options
     }) {
-      const headers = { traceparent: getTraceParent({ tracingConfig: this._tracingConfig }) }
+      const headers = { traceparent: this._tracingHelper.getTraceParent() }
       const info = await this._engine.transaction('start', headers, options as Options)
 
       let result: unknown
@@ -792,11 +794,10 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
 
       const spanOptions = {
         name: 'transaction',
-        enabled: this._tracingConfig.enabled,
         attributes: { method: '$transaction' },
       }
 
-      return runInChildSpan(spanOptions, callback)
+      return this._tracingHelper.runInChildSpan(spanOptions, callback)
     }
 
     /**
@@ -804,7 +805,7 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
      * @param internalParams
      * @returns
      */
-    async _request(internalParams: InternalRequestParams): Promise<any> {
+    _request(internalParams: InternalRequestParams): Promise<any> {
       // this is the otel context that is active at the callsite
       internalParams.otelParentCtx = context.active()
 
@@ -821,19 +822,18 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
       const spanOptions = {
         middleware: {
           name: 'middleware',
-          enabled: this._tracingConfig.middleware,
+          middleware: true,
           attributes: { method: '$use' },
           active: false,
-        } as SpanOptions,
+        } as ExtendedSpanOptions,
         operation: {
           name: 'operation',
-          enabled: this._tracingConfig.enabled,
           attributes: {
             method: params.action,
             model: params.model,
             name: `${params.model}.${params.action}`,
           },
-        } as SpanOptions,
+        } as ExtendedSpanOptions,
       }
 
       let index = -1
@@ -845,7 +845,7 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
         if (nextMiddleware) {
           // we pass the modified params down to the next one, & repeat
           // calling `next` calls the consumer again with the new params
-          return runInChildSpan(spanOptions.middleware, (span) => {
+          return this._tracingHelper.runInChildSpan(spanOptions.middleware, (span) => {
             // we call `span.end()` _before_ calling the next middleware
             return nextMiddleware(changedMiddlewareParams, (p) => (span?.end(), consumer(p)))
           })
@@ -869,7 +869,7 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
         return applyQueryExtensions(this, requestParams) // also executes the query
       }
 
-      return await runInChildSpan(spanOptions.operation, () => {
+      return this._tracingHelper.runInChildSpan(spanOptions.operation, () => {
         if (NODE_CLIENT) {
           // https://github.com/prisma/prisma/issues/3148 not for edge client
           const asyncRes = new AsyncResource('prisma-client-request')
@@ -899,9 +899,8 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
         // execute argument transformation before execution
         args = argsMapper ? argsMapper(args) : args
 
-        const spanOptions: SpanOptions = {
+        const spanOptions: ExtendedSpanOptions = {
           name: 'serialize',
-          enabled: this._tracingConfig.enabled,
         }
 
         let rejectOnNotFound: RejectOnNotFound
@@ -910,7 +909,7 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
           warnAboutRejectOnNotFound(rejectOnNotFound, model, action)
         }
 
-        const message = await runInChildSpan(spanOptions, () =>
+        const message = this._tracingHelper.runInChildSpan(spanOptions, () =>
           protocolEncoder.createMessage({
             modelName: model,
             action,
@@ -966,12 +965,11 @@ Or read our docs at https://www.prisma.io/docs/concepts/components/prisma-client
 
     _getDmmf = callOnce(async (params: Pick<InternalRequestParams, 'clientMethod' | 'callsite'>) => {
       try {
-        const dmmf = await runInChildSpan(
-          { name: 'getDmmf', enabled: this._tracingConfig.enabled, internal: true },
-          () => this._engine.getDmmf(),
+        const dmmf = await this._tracingHelper.runInChildSpan({ name: 'getDmmf', internal: true }, () =>
+          this._engine.getDmmf(),
         )
 
-        return runInChildSpan({ name: 'processDmmf', enabled: this._tracingConfig.enabled, internal: true }, () => {
+        return this._tracingHelper.runInChildSpan({ name: 'processDmmf', internal: true }, () => {
           return new DMMFHelper(getPrismaClientDMMF(dmmf))
         })
       } catch (error) {
