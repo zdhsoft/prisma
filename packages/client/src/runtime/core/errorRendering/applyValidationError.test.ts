@@ -1,11 +1,12 @@
-import chalk from 'chalk'
 import ansiEscapesSerializer from 'jest-serializer-ansi-escapes'
+import { $ as colors } from 'kleur/colors'
 
 import { Writer } from '../../../generation/ts-builders/Writer'
 import { JsArgs } from '../types/JsApi'
 import { ValidationError } from '../types/ValidationError'
 import { applyValidationError } from './applyValidationError'
 import { ArgumentsRenderingTree, buildArgumentsRenderingTree } from './ArgumentsRenderingTree'
+import { activeColors, inactiveColors } from './base'
 
 expect.addSnapshotSerializer(ansiEscapesSerializer)
 
@@ -16,21 +17,21 @@ const renderError = (error: ValidationError, args: JsArgs) => {
   return `
 Colorless:
 
-${renderTreeWithChalkLevel(argsTree, 0)}
+${renderTreeWithChalkLevel(argsTree, false)}
 
 ------------------------------------
 
 Colored:
 
-${renderTreeWithChalkLevel(argsTree, 2)}
+${renderTreeWithChalkLevel(argsTree, true)}
 `
 }
 
-function renderTreeWithChalkLevel(argsTree: ArgumentsRenderingTree, chalkLevel: chalk.Level) {
-  const chalkInstance = new chalk.Instance({ level: chalkLevel })
-  const context = { chalk: chalkInstance }
+function renderTreeWithChalkLevel(argsTree: ArgumentsRenderingTree, colorsEnabled: boolean) {
+  colors.enabled = colorsEnabled
+  const context = { colors: colorsEnabled ? activeColors : inactiveColors }
   const argsStr = new Writer(0, context).write(argsTree).toString()
-  const message = argsTree.renderAllMessages(chalkInstance)
+  const message = argsTree.renderAllMessages(context.colors)
 
   return `${argsStr}\n\n${message}`
 }

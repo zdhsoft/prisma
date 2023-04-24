@@ -116,6 +116,7 @@
     "jest-serializer-ansi-escapes": "2.0.1",
     "jest-snapshot": "29.4.3",
     "js-levenshtein": "1.1.6",
+    "kleur": "4.1.5",
     "klona": "2.0.6",
     "lz-string": "1.4.4",
     "mariadb": "3.0.2",
