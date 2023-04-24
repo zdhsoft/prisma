@@ -14,6 +14,7 @@ import { depCheckPlugin } from './plugins/depCheckPlugin'
 import { fixImportsPlugin } from './plugins/fixImportsPlugin'
 import { onErrorPlugin } from './plugins/onErrorPlugin'
 import { tscPlugin } from './plugins/tscPlugin'
+import { writeFile } from 'fs/promises'
 
 export type BuildResult = esbuild.BuildResult
 export type BuildOptions = esbuild.BuildOptions & {
@@ -106,7 +107,11 @@ function addDefaultOutDir(options: BuildOptions) {
  * Execute esbuild with all the configurations we pass
  */
 async function executeEsBuild(options: BuildOptions) {
-  return [options, await esbuild.build(omit(options, ['name', 'emitTypes']))] as const
+  const result = await esbuild.build(omit(options, ['name', 'emitTypes']))
+  if (result.metafile) {
+    await writeFile(`${options.name}.json`, JSON.stringify(result.metafile))
+  }
+  return [options, result] as const
 }
 
 /**
