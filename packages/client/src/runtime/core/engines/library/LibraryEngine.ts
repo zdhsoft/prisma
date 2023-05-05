@@ -75,7 +75,7 @@ export class LibraryEngine extends Engine<undefined> {
   libQueryEnginePath?: string
   platform?: Platform
   datasourceOverrides: Record<string, string>
-  datamodel: string
+  datamodel: Buffer
   logQueries: boolean
   logLevel: QueryEngineLogLevel
   lastQuery?: string
@@ -99,7 +99,7 @@ export class LibraryEngine extends Engine<undefined> {
 
     try {
       // we try to handle the case where the datamodel is not found
-      this.datamodel = fs.readFileSync(config.datamodelPath, 'utf-8')
+      this.datamodel = fs.readFileSync(config.datamodelPath)
     } catch (e) {
       if ((e.stack as string).match(/\/\.next|\/next@|\/next\//)) {
         throw new PrismaClientInitializationError(
@@ -253,8 +253,8 @@ You may have to run ${green('prisma generate')} for your changes to take effect.
         // to avoid this cycle
         const weakThis = new WeakRef(this)
         this.engine = new this.QueryEngineConstructor(
+          this.datamodel,
           {
-            datamodel: this.datamodel,
             env: process.env,
             logQueries: this.config.logQueries ?? false,
             ignoreEnvVarErrors: true,

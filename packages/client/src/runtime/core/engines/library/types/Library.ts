@@ -17,7 +17,7 @@ export type QueryEngineInstance = {
 }
 
 export interface QueryEngineConstructor {
-  new (config: QueryEngineConfig, logger: (log: string) => void): QueryEngineInstance
+  new (datamodel: Buffer, config: QueryEngineConfig, logger: (log: string) => void): QueryEngineInstance
 }
 
 export interface LibraryLoader {

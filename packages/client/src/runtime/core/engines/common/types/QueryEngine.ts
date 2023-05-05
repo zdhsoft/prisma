@@ -41,7 +41,6 @@ export type QueryEngineLogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' 
 
 export type QueryEngineConfig = {
   // TODO rename datamodel here and other places
-  datamodel: string
   configDir: string
   logQueries: boolean
   ignoreEnvVarErrors: boolean
