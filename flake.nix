@@ -21,7 +21,6 @@
             nodejs.pkgs.pnpm
             nodejs.pkgs.prettier
             nodejs.pkgs.ts-node
-            nodejs.pkgs.typescript
             nodejs.pkgs.typescript-language-server
             nodejs.pkgs.vscode-langservers-extracted
             nodejs.pkgs."@prisma/language-server"
