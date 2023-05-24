@@ -1,18 +1,18 @@
 import { assertNever } from '@prisma/internals'
-import { Chalk } from 'chalk'
 
 import { ObjectEnumValue } from '../../object-enums'
 import { lowerCase } from '../../utils/common'
+import { isValidDate } from '../../utils/date'
 import { isDecimalJsLike } from '../../utils/decimalJsLike'
 import { isFieldRef } from '../model/FieldRef'
 import { JsArgs, JsInputValue } from '../types/JsApi'
 import { ArrayValue } from './ArrayValue'
-import { ErrorBasicBuilder, ErrorWriter } from './base'
+import { Colors, ErrorBasicBuilder, ErrorWriter } from './base'
 import { ObjectField } from './ObjectField'
 import { ObjectValue } from './ObjectValue'
 import { ScalarValue } from './ScalarValue'
 
-type MessageRender = (chalk: Chalk) => string
+type MessageRender = (colors: Colors) => string
 
 export class ArgumentsRenderingTree implements ErrorBasicBuilder {
   readonly arguments: ObjectValue
@@ -30,8 +30,8 @@ export class ArgumentsRenderingTree implements ErrorBasicBuilder {
     this.errorMessages.push(renderer)
   }
 
-  renderAllMessages(chalk: Chalk): string {
-    return this.errorMessages.map((messageRenderer) => messageRenderer(chalk)).join('\n')
+  renderAllMessages(colors: Colors): string {
+    return this.errorMessages.map((messageRenderer) => messageRenderer(colors)).join('\n')
   }
 }
 
@@ -91,7 +91,8 @@ function buildInputValue(value: JsInputValue) {
   }
 
   if (value instanceof Date) {
-    return new ScalarValue(`new Date("${value.toISOString()}")`)
+    const dateStr = isValidDate(value) ? value.toISOString() : 'Invalid Date'
+    return new ScalarValue(`new Date("${dateStr}")`)
   }
 
   if (value instanceof ObjectEnumValue) {
