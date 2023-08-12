@@ -8,6 +8,7 @@ import { noSideEffectsPlugin } from '../../../helpers/compile/plugins/noSideEffe
 
 const fillPluginPath = path.join('..', '..', 'helpers', 'compile', 'plugins', 'fill-plugin')
 const functionPolyfillPath = path.join(fillPluginPath, 'fillers', 'function.ts')
+const promiseTrackerPath = path.join(fillPluginPath, 'fillers', 'PromiseTracker.ts')
 const runtimeDir = path.resolve(__dirname, '..', 'runtime')
 
 // we define the config for runtime
@@ -17,7 +18,7 @@ function nodeRuntimeBuildConfig(targetEngineType: 'binary' | 'library' | 'data-p
     entryPoints: ['src/runtime/index.ts'],
     outfile: `runtime/${targetEngineType}`,
     bundle: true,
-    minify: true,
+    // minify: true,
     sourcemap: 'linked',
     emitTypes: targetEngineType === 'library',
     define: {
@@ -25,7 +26,9 @@ function nodeRuntimeBuildConfig(targetEngineType: 'binary' | 'library' | 'data-p
       TARGET_ENGINE_TYPE: JSON.stringify(targetEngineType),
       // that fixes an issue with lz-string umd builds
       'define.amd': 'false',
+      Promise: 'PromiseTracker',
     },
+    inject: [promiseTrackerPath],
     plugins: [noSideEffectsPlugin(/^(arg|lz-string)$/)],
   }
 }
