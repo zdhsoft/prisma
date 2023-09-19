@@ -34,23 +34,21 @@ export declare const PrismaClient: any
  */
 export declare type PrismaClient = any
 
-export declare class PrismaClientExtends<
-  ExtArgs extends runtime.Types.Extensions.ExtensionArgs = runtime.Types.Extensions.DefaultArgs,
-> {
+export declare class PrismaClientExtends<ExtArgs extends runtime.ExtensionArgs = runtime.DefaultArgs> {
   $extends: { extArgs: ExtArgs } & (<
-    R extends runtime.Types.Extensions.UserArgs['result'] = {},
-    M extends runtime.Types.Extensions.UserArgs['model'] = {},
-    Q extends runtime.Types.Extensions.UserArgs['query'] = {},
-    C extends runtime.Types.Extensions.UserArgs['client'] = {},
-    Args extends runtime.Types.Extensions.ExtensionArgs = runtime.Types.Extensions.InternalArgs<R, M, {}, C>,
+    R extends runtime.UserArgs['result'] = {},
+    M extends runtime.UserArgs['model'] = {},
+    Q extends runtime.UserArgs['query'] = {},
+    C extends runtime.UserArgs['client'] = {},
+    Args extends runtime.ExtensionArgs = runtime.InternalArgs<R, M, {}, C>,
   >(
     args:
       | ((client: PrismaClientExtends<ExtArgs>) => { $extends: { extArgs: Args } })
       | { name?: string }
-      | { result?: R & runtime.Types.Extensions.UserArgs['result'] }
-      | { model?: M & runtime.Types.Extensions.UserArgs['model'] }
-      | { query?: Q & runtime.Types.Extensions.UserArgs['query'] }
-      | { client?: C & runtime.Types.Extensions.UserArgs['client'] },
+      | { result?: R & runtime.UserArgs['result'] }
+      | { model?: M & runtime.UserArgs['model'] }
+      | { query?: Q & runtime.UserArgs['query'] }
+      | { client?: C & runtime.UserArgs['client'] },
   ) => PrismaClientExtends<Args & ExtArgs> & Args['client'])
 
   $transaction<R>(
@@ -80,28 +78,28 @@ export namespace Prisma {
   export type TransactionClient = any
 
   export function defineExtension<
-    R extends runtime.Types.Extensions.UserArgs['result'] = {},
-    M extends runtime.Types.Extensions.UserArgs['model'] = {},
-    Q extends runtime.Types.Extensions.UserArgs['query'] = {},
-    C extends runtime.Types.Extensions.UserArgs['client'] = {},
-    Args extends runtime.Types.Extensions.ExtensionArgs = runtime.Types.Extensions.InternalArgs<R, M, {}, C>,
+    R extends runtime.UserArgs['result'] = {},
+    M extends runtime.UserArgs['model'] = {},
+    Q extends runtime.UserArgs['query'] = {},
+    C extends runtime.UserArgs['client'] = {},
+    Args extends runtime.ExtensionArgs = runtime.InternalArgs<R, M, {}, C>,
   >(
     args:
       | ((client: PrismaClientExtends) => { $extends: { extArgs: Args } })
       | { name?: string }
-      | { result?: R & runtime.Types.Extensions.UserArgs['result'] }
-      | { model?: M & runtime.Types.Extensions.UserArgs['model'] }
-      | { query?: Q & runtime.Types.Extensions.UserArgs['query'] }
-      | { client?: C & runtime.Types.Extensions.UserArgs['client'] },
+      | { result?: R & runtime.UserArgs['result'] }
+      | { model?: M & runtime.UserArgs['model'] }
+      | { query?: Q & runtime.UserArgs['query'] }
+      | { client?: C & runtime.UserArgs['client'] },
   ): (client: any) => PrismaClientExtends<Args>
 
-  export type Extension = runtime.Types.Extensions.UserArgs
+  export type Extension = runtime.UserArgs
   export import getExtensionContext = runtime.Extensions.getExtensionContext
-  export import Args = runtime.Types.Public.Args
-  export import Payload = runtime.Types.Public.Payload
-  export import Result = runtime.Types.Public.Result
-  export import Exact = runtime.Types.Public.Exact
-  export import PrismaPromise = runtime.Types.Public.PrismaPromise
+  export import Args = runtime.Args
+  export import Payload = runtime.Payload
+  export import Result = runtime.Result
+  export import Exact = runtime.Exact
+  export import PrismaPromise = runtime.PrismaPromise
 
   export const prismaVersion: {
     client: string
