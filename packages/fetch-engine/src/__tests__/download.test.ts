@@ -1,5 +1,5 @@
 import { enginesVersion } from '@prisma/engines-version'
-import { getPlatform, Platform } from '@prisma/get-platform'
+import { BinaryTarget, getBinaryTargetForCurrentPlatform } from '@prisma/get-platform'
 import del from 'del'
 import fs from 'fs'
 import type { Response } from 'node-fetch'
@@ -32,13 +32,13 @@ describe('download', () => {
   const baseDirCorruption = path.posix.join(dirname, 'corruption')
   const baseDirChecksum = path.posix.join(dirname, 'checksum')
   const baseDirBinaryTarget = path.posix.join(dirname, 'binaryTarget')
-  let platform: Platform
+  let binaryTarget: BinaryTarget
 
   beforeEach(async () => {
     mockFetch.mockReset().mockImplementation(actualFetch)
     // completely clean up the cache and keep nothing
     await cleanupCache(0)
-    platform = await getPlatform()
+    binaryTarget = await getBinaryTargetForCurrentPlatform()
   })
 
   describe('all engines', () => {
@@ -50,9 +50,9 @@ describe('download', () => {
     })
 
     test('download all current engines', async () => {
-      const platform = await getPlatform()
-      const queryEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.QueryEngineBinary, platform))
-      const schemaEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.SchemaEngineBinary, platform))
+      const binaryTarget = await getBinaryTargetForCurrentPlatform()
+      const queryEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.QueryEngineBinary, binaryTarget))
+      const schemaEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.SchemaEngineBinary, binaryTarget))
 
       await download({
         binaries: {
@@ -155,8 +155,8 @@ describe('download', () => {
     })
 
     test('download all engines & cache them', async () => {
-      const queryEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.QueryEngineBinary, platform))
-      const schemaEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.SchemaEngineBinary, platform))
+      const queryEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.QueryEngineBinary, binaryTarget))
+      const schemaEnginePath = path.join(baseDirAll, getBinaryName(BinaryType.SchemaEngineBinary, binaryTarget))
 
       const before0 = Math.round(performance.now())
       await download({
@@ -540,7 +540,7 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
     })
 
     test('auto heal corrupt engine binary', async () => {
-      const targetPath = path.join(baseDirCorruption, getBinaryName('query-engine', platform))
+      const targetPath = path.join(baseDirCorruption, getBinaryName('query-engine', binaryTarget))
       if (fs.existsSync(targetPath)) {
         try {
           fs.unlinkSync(targetPath)
@@ -716,7 +716,7 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
           binaries: {
             [BinaryType.QueryEngineLibrary]: baseDirChecksum,
           },
-          binaryTargets: [platform],
+          binaryTargets: [binaryTarget],
           version: CURRENT_ENGINES_HASH,
         }),
       ).rejects.toThrow(`network timeout at:`)
@@ -742,7 +742,7 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
           binaries: {
             [BinaryType.QueryEngineLibrary]: baseDirChecksum,
           },
-          binaryTargets: [platform],
+          binaryTargets: [binaryTarget],
           version: CURRENT_ENGINES_HASH,
         }),
       ).rejects.toThrow(`network timeout at:`)
@@ -770,19 +770,19 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
     })
 
     test('if checksum downloads and matches, does not throw', async () => {
-      const queryEnginePath = path.join(baseDirChecksum, getBinaryName(BinaryType.QueryEngineLibrary, platform))
+      const queryEnginePath = path.join(baseDirChecksum, getBinaryName(BinaryType.QueryEngineLibrary, binaryTarget))
 
       await expect(
         download({
           binaries: {
             [BinaryType.QueryEngineLibrary]: baseDirChecksum,
           },
-          binaryTargets: [platform],
+          binaryTargets: [binaryTarget],
           version: CURRENT_ENGINES_HASH,
         }),
       ).resolves.toStrictEqual({
         'libquery-engine': {
-          [platform]: queryEnginePath,
+          [binaryTarget]: queryEnginePath,
         },
       })
 
@@ -813,7 +813,7 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
           binaries: {
             [BinaryType.QueryEngineLibrary]: baseDirChecksum,
           },
-          binaryTargets: [platform],
+          binaryTargets: [binaryTarget],
           version: CURRENT_ENGINES_HASH,
         }),
       ).rejects.toThrow(/^sha256 checksum of .+ \(zipped\) should be .+ but is .+$/)
@@ -834,19 +834,19 @@ It took ${timeInMsToDownloadAllFromCache2}ms to execute download() for all binar
         return actualFetch(url, opts)
       })
 
-      const queryEnginePath = path.join(baseDirChecksum, getBinaryName(BinaryType.QueryEngineLibrary, platform))
+      const queryEnginePath = path.join(baseDirChecksum, getBinaryName(BinaryType.QueryEngineLibrary, binaryTarget))
 
       await expect(
         download({
           binaries: {
             [BinaryType.QueryEngineLibrary]: baseDirChecksum,
           },
-          binaryTargets: [platform],
+          binaryTargets: [binaryTarget],
           version: CURRENT_ENGINES_HASH,
         }),
       ).resolves.toStrictEqual({
         'libquery-engine': {
-          [platform]: queryEnginePath,
+          [binaryTarget]: queryEnginePath,
         },
       })
 

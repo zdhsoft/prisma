@@ -1,7 +1,7 @@
 import Debug from '@prisma/debug'
 import { ErrorRecord } from '@prisma/driver-adapter-utils'
-import type { Platform } from '@prisma/get-platform'
-import { assertNodeAPISupported, getPlatform, platforms } from '@prisma/get-platform'
+import type { BinaryTarget } from '@prisma/get-platform'
+import { assertNodeAPISupported, binaryTargets, getBinaryTargetForCurrentPlatform } from '@prisma/get-platform'
 import { assertAlways, EngineSpanEvent } from '@prisma/internals'
 import fs from 'fs'
 import { bold, green, red, yellow } from 'kleur/colors'
@@ -52,7 +52,7 @@ function isPanicEvent(event: QueryEngineEvent): event is QueryEnginePanicEvent {
   }
 }
 
-const knownPlatforms: Platform[] = [...platforms, 'native']
+const knownBinaryTargets: BinaryTarget[] = [...binaryTargets, 'native']
 let engineInstanceCount = 0
 
 export class LibraryEngine extends Engine<undefined> {
@@ -68,7 +68,7 @@ export class LibraryEngine extends Engine<undefined> {
   private library?: Library
   private logEmitter: EventEmitter
   libQueryEnginePath?: string
-  platform?: Platform
+  binaryTarget?: BinaryTarget
   datasourceOverrides?: Record<string, string>
   datamodel: string
   logQueries: boolean
@@ -196,24 +196,24 @@ Please help us by answering a few questions: https://pris.ly/bundler-investigati
     }
 
     assertNodeAPISupported()
-    this.platform = await this.getPlatform()
+    this.binaryTarget = await this.getCurrentBinaryTarget()
     await this.loadEngine()
     this.version()
   }
 
-  private async getPlatform() {
-    if (this.platform) return this.platform
-    const platform = await getPlatform()
-    if (!knownPlatforms.includes(platform)) {
+  private async getCurrentBinaryTarget() {
+    if (this.binaryTarget) return this.binaryTarget
+    const binaryTarget = await getBinaryTargetForCurrentPlatform()
+    if (!knownBinaryTargets.includes(binaryTarget)) {
       throw new PrismaClientInitializationError(
-        `Unknown ${red('PRISMA_QUERY_ENGINE_LIBRARY')} ${red(bold(platform))}. Possible binaryTargets: ${green(
-          knownPlatforms.join(', '),
+        `Unknown ${red('PRISMA_QUERY_ENGINE_LIBRARY')} ${red(bold(binaryTarget))}. Possible binaryTargets: ${green(
+          knownBinaryTargets.join(', '),
         )} or a path to the query engine library.
 You may have to run ${green('prisma generate')} for your changes to take effect.`,
         this.config.clientVersion!,
       )
     }
-    return platform
+    return binaryTarget
   }
 
   private parseEngineResponse<T>(response?: string): T {
@@ -317,7 +317,7 @@ You may have to run ${green('prisma generate')} for your changes to take effect.
 
   private getErrorMessageWithLink(title: string) {
     return getErrorMessageWithLink({
-      platform: this.platform,
+      platform: this.binaryTarget,
       title,
       version: this.config.clientVersion!,
       engineVersion: this.versionInfo?.commit,
